@@ -36,3 +36,6 @@ class ChromaDb(BaseVectorDb):
 
     def query(self, query):
         return self.vector_store.similarity_search(query)
+
+    def get_vectorstore(self):
+        return self.vector_store
