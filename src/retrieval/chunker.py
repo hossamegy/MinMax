@@ -2,26 +2,18 @@ import numpy as np
 from scipy.special import expit
 from typing import List
 
-
-
-HARD_THR = 0.6
-C = 0.9
-INIT_CONST = 1.5
-
-
 class MaxMinChunker:
     def __init__(
         self,
-        hard_thr: float = HARD_THR,
-        c: float = C,
-        init_const: float = INIT_CONST,
-        normalize: bool = True,
+        hard_thr: float = 0.6,
+        c: float = 0.9,
+        init_const: float = 1.5,
+        model=None,
     ):
-        self.model
+        self.model = model
         self.hard_thr = hard_thr
         self.c = c
         self.init_const = init_const
-        self.normalize = normalize
 
     def cosine_sim(self, a: np.ndarray, b: np.ndarray) -> float:
         """Fast cosine similarity (assumes normalized vectors if enabled)."""
@@ -33,15 +25,24 @@ class MaxMinChunker:
         """
         return max(self.c * min_sim * float(expit(size)), self.hard_thr)
 
-    def chunk(self, sentences: List[str]) -> List[List[str]]:
+    def chunk(self, data: List[dict]) -> List[List[str]]:
+        # Extract sentences and filter out empty ones
+        sentences = [item['sentence'].strip() for item in data if 'sentence' in item and item['sentence'].strip()]
+        
         if not sentences:
+            print("Warning: No valid sentences found in data.")
             return []
 
-        embeddings = self.model.encode(
-            sentences,
-            convert_to_numpy=True,
-            normalize_embeddings=self.normalize
-        )
+        if self.model is None:
+            raise ValueError("Model must be provided to MaxMinChunker")
+
+        print(f"DEBUG: Processing {len(sentences)} sentences...")
+        embeddings = self.model.encode(sentences)
+        print(f"DEBUG: Received {len(embeddings)} embeddings vectors.")
+
+        if len(sentences) != len(embeddings):
+            print(f"ERROR: Mismatch between sentences ({len(sentences)}) and embeddings ({len(embeddings)})!")
+            sentences = sentences[:len(embeddings)]
 
         chunks = []
 
